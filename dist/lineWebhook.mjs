@@ -53,7 +53,7 @@ class ExtensionBlocks {
           arguments: {
             URL: {
               type: 'string',
-              defaultValue: 'https://your-worker.example.workers.dev/api/send'
+              defaultValue: 'https://patient-wave-5f0e.toshishyun.workers.dev/api/send'
             }
           }
         },
