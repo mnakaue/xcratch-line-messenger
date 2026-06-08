@@ -1,9 +1,27 @@
 const EXTENSION_ID = 'xcratchLineWebhook';
 const EXTENSION_NAME = 'LINE Webhook';
+const EXTENSION_DESCRIPTION = 'Xcratch から LINE にメッセージを送る';
 const STATUS_READY = 'ready';
 const STATUS_NOT_READY = 'not ready';
 
-const iconURL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%2306C755'/%3E%3Cpath d='M22 24h36a8 8 0 0 1 8 8v13a8 8 0 0 1-8 8H43l-9 8v-8H22a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8Z' fill='white'/%3E%3C/svg%3E";
+let extensionURL = 'https://mnakaue.github.io/xcratch-line-messenger/dist/lineWebhook.mjs';
+
+const iconURL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%2306C755'/%3E%3Cpath d='M22 24h36a8 8 0 0 1 8 8v13a8 8 0 0 1-8 8H43l-9 8v-8H22a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8Z' fill='white'/%3E%3Cpath d='M30 34h20M30 42h14' stroke='%2306C755' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E";
+
+const entry = {
+  name: EXTENSION_NAME,
+  extensionId: EXTENSION_ID,
+  extensionURL,
+  collaborator: 'mnakaue',
+  iconURL,
+  insetIconURL: iconURL,
+  description: EXTENSION_DESCRIPTION,
+  tags: ['communication', 'line'],
+  featured: false,
+  disabled: false,
+  bluetoothRequired: false,
+  internetConnectionRequired: true
+};
 
 const defaultState = () => ({
   webhookUrl: '',
@@ -13,100 +31,104 @@ const defaultState = () => ({
   lastResponse: ''
 });
 
-class XcratchLineWebhookExtension {
+class ExtensionBlocks {
   constructor(runtime) {
     this.runtime = runtime;
     this.state = defaultState();
   }
 
   getInfo() {
-    const ScratchRef = globalThis.Scratch;
-    const BlockType = ScratchRef?.BlockType;
-    const ArgumentType = ScratchRef?.ArgumentType;
-
     return {
       id: EXTENSION_ID,
       name: EXTENSION_NAME,
-      color1: '#06C755',
-      color2: '#04A444',
-      menuIconURI: iconURL,
+      extensionURL,
       blockIconURI: iconURL,
+      showStatusButton: false,
       blocks: [
         {
           opcode: 'setWebhookUrl',
-          blockType: BlockType.COMMAND,
+          func: 'setWebhookUrl',
+          blockType: 'command',
           text: 'Webhook URL を [URL] にする',
           arguments: {
             URL: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: 'https://your-worker.example.workers.dev/api/send'
             }
           }
         },
         {
           opcode: 'setClassPassword',
-          blockType: BlockType.COMMAND,
+          func: 'setClassPassword',
+          blockType: 'command',
           text: '利用パスワードを [PASSWORD] にする',
           arguments: {
             PASSWORD: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: 'class-2026-a'
             }
           }
         },
         {
           opcode: 'setUserCode',
-          blockType: BlockType.COMMAND,
+          func: 'setUserCode',
+          blockType: 'command',
           text: '自分の利用コードを [USER_CODE] にする',
           arguments: {
             USER_CODE: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: 's8k2mz4q'
             }
           }
         },
         {
           opcode: 'sendMessage',
-          blockType: BlockType.COMMAND,
+          func: 'sendMessage',
+          blockType: 'command',
           text: '[MESSAGE] を LINE に送る',
           arguments: {
             MESSAGE: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: 'こんにちは'
             }
           }
         },
         {
           opcode: 'sendMessageToCode',
-          blockType: BlockType.COMMAND,
+          func: 'sendMessageToCode',
+          blockType: 'command',
           text: '[MESSAGE] を 利用コード [USER_CODE] に送る',
           arguments: {
             MESSAGE: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: '実験成功'
             },
             USER_CODE: {
-              type: ArgumentType.STRING,
+              type: 'string',
               defaultValue: 's8k2mz4q'
             }
           }
         },
         {
           opcode: 'isReady',
-          blockType: BlockType.BOOLEAN,
+          func: 'isReady',
+          blockType: 'boolean',
           text: 'LINE送信の準備ができている'
         },
         {
           opcode: 'getLastStatus',
-          blockType: BlockType.REPORTER,
+          func: 'getLastStatus',
+          blockType: 'reporter',
           text: 'LINE送信の状態'
         },
         {
           opcode: 'getLastResponse',
-          blockType: BlockType.REPORTER,
+          func: 'getLastResponse',
+          blockType: 'reporter',
           text: 'LINE送信の応答'
         }
-      ]
+      ],
+      menus: {}
     };
   }
 
@@ -194,13 +216,23 @@ class XcratchLineWebhookExtension {
   #refreshStatus() {
     this.state.lastStatus = this.#isConfigured() ? STATUS_READY : STATUS_NOT_READY;
   }
+
+  static get EXTENSION_ID() {
+    return EXTENSION_ID;
+  }
+
+  static get EXTENSION_NAME() {
+    return EXTENSION_NAME;
+  }
+
+  static get extensionURL() {
+    return extensionURL;
+  }
+
+  static set extensionURL(url) {
+    extensionURL = url;
+    entry.extensionURL = url;
+  }
 }
 
-const extension = new XcratchLineWebhookExtension();
-
-if (globalThis.Scratch?.extensions?.register) {
-  globalThis.Scratch.extensions.register(extension);
-}
-
-export { XcratchLineWebhookExtension };
-export default XcratchLineWebhookExtension;
+export {ExtensionBlocks as blockClass, entry};
