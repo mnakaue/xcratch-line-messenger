@@ -73,7 +73,7 @@ class ExtensionBlocks {
           opcode: 'setUserCode',
           func: 'setUserCode',
           blockType: 'command',
-          text: '自分の利用コードを [USER_CODE] にする',
+          text: '自分の個人コードを [USER_CODE] にする',
           arguments: {
             USER_CODE: {
               type: 'string',
@@ -97,7 +97,7 @@ class ExtensionBlocks {
           opcode: 'sendMessageToCode',
           func: 'sendMessageToCode',
           blockType: 'command',
-          text: '[MESSAGE] を 利用コード [USER_CODE] に送る',
+          text: '[MESSAGE] を 個人コード [USER_CODE] に送る',
           arguments: {
             MESSAGE: {
               type: 'string',
@@ -173,13 +173,13 @@ class ExtensionBlocks {
   async #postMessage(message, userCode) {
     if (!this.#isConfigured()) {
       this.state.lastStatus = 'error';
-      this.state.lastResponse = 'Webhook URL / password / userCode が未設定です';
+      this.state.lastResponse = 'Webhook URL / 利用パスワード / 個人コード が未設定です';
       return;
     }
 
     if (!userCode) {
       this.state.lastStatus = 'error';
-      this.state.lastResponse = '利用コードが空です';
+      this.state.lastResponse = '個人コードが空です';
       return;
     }
 
