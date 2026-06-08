@@ -58,23 +58,15 @@ class ExtensionBlocks {
           }
         },
         {
-          opcode: 'setClassPassword',
-          func: 'setClassPassword',
+          opcode: 'setCredentials',
+          func: 'setCredentials',
           blockType: 'command',
-          text: '利用パスワードを [PASSWORD] にする',
+          text: '利用パスワード [PASSWORD]、個人コード [USER_CODE] に設定する',
           arguments: {
             PASSWORD: {
               type: 'string',
               defaultValue: 'class-2026-a'
-            }
-          }
-        },
-        {
-          opcode: 'setUserCode',
-          func: 'setUserCode',
-          blockType: 'command',
-          text: '自分の個人コードを [USER_CODE] にする',
-          arguments: {
+            },
             USER_CODE: {
               type: 'string',
               defaultValue: 's8k2mz4q'
@@ -139,6 +131,12 @@ class ExtensionBlocks {
 
   setClassPassword(args) {
     this.state.classPassword = String(args.PASSWORD || '').trim();
+    this.#refreshStatus();
+  }
+
+  setCredentials(args) {
+    this.state.classPassword = String(args.PASSWORD || '').trim();
+    this.state.userCode = String(args.USER_CODE || '').trim().toLowerCase();
     this.#refreshStatus();
   }
 
