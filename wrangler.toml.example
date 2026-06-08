@@ -1,0 +1,7 @@
+name = "xcratch-line-webhook"
+main = "cloudflare-worker/worker.mjs"
+compatibility_date = "2026-06-08"
+
+[[kv_namespaces]]
+binding = "LINE_USER_MAP"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
