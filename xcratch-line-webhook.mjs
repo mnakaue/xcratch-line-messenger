@@ -35,6 +35,7 @@ class ExtensionBlocks {
   constructor(runtime) {
     this.runtime = runtime;
     this.state = defaultState();
+    this.sendQueue = Promise.resolve();
   }
 
   getInfo() {
@@ -146,11 +147,14 @@ class ExtensionBlocks {
   }
 
   async sendMessage(args) {
-    return this.#postMessage(String(args.MESSAGE || ''), this.state.userCode);
+    return this.#enqueueMessage(
+      String(args.MESSAGE || ''),
+      this.state.userCode
+    );
   }
 
   async sendMessageToCode(args) {
-    return this.#postMessage(
+    return this.#enqueueMessage(
       String(args.MESSAGE || ''),
       String(args.USER_CODE || '').trim().toLowerCase()
     );
@@ -168,6 +172,13 @@ class ExtensionBlocks {
     return this.state.lastResponse;
   }
 
+  #enqueueMessage(message, userCode) {
+    this.sendQueue = this.sendQueue
+      .then(() => this.#postMessage(message, userCode))
+      .catch(() => this.#postMessage(message, userCode));
+    return this.sendQueue;
+  }
+
   async #postMessage(message, userCode) {
     if (!this.#isConfigured()) {
       this.state.lastStatus = 'error';
@@ -182,6 +193,8 @@ class ExtensionBlocks {
     }
 
     try {
+      this.state.lastStatus = 'sending';
+      this.state.lastResponse = '送信中';
       const response = await fetch(this.state.webhookUrl, {
         method: 'POST',
         headers: {
