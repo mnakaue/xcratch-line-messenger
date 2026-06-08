@@ -35,7 +35,8 @@ class ExtensionBlocks {
   constructor(runtime) {
     this.runtime = runtime;
     this.state = defaultState();
-    this.sendQueue = Promise.resolve();
+    this.pendingMessages = [];
+    this.isSending = false;
   }
 
   getInfo() {
@@ -147,14 +148,14 @@ class ExtensionBlocks {
   }
 
   async sendMessage(args) {
-    return this.#enqueueMessage(
+    this.#enqueueMessage(
       String(args.MESSAGE || ''),
       this.state.userCode
     );
   }
 
   async sendMessageToCode(args) {
-    return this.#enqueueMessage(
+    this.#enqueueMessage(
       String(args.MESSAGE || ''),
       String(args.USER_CODE || '').trim().toLowerCase()
     );
@@ -173,10 +174,19 @@ class ExtensionBlocks {
   }
 
   #enqueueMessage(message, userCode) {
-    this.sendQueue = this.sendQueue
-      .then(() => this.#postMessage(message, userCode))
-      .catch(() => this.#postMessage(message, userCode));
-    return this.sendQueue;
+    this.pendingMessages.push({message, userCode});
+    if (!this.isSending) {
+      this.#drainQueue();
+    }
+  }
+
+  async #drainQueue() {
+    this.isSending = true;
+    while (this.pendingMessages.length > 0) {
+      const next = this.pendingMessages.shift();
+      await this.#postMessage(next.message, next.userCode);
+    }
+    this.isSending = false;
   }
 
   async #postMessage(message, userCode) {
@@ -194,7 +204,9 @@ class ExtensionBlocks {
 
     try {
       this.state.lastStatus = 'sending';
-      this.state.lastResponse = '送信中';
+      this.state.lastResponse = this.pendingMessages.length > 0
+        ? `送信中（待ち ${this.pendingMessages.length} 件）`
+        : '送信中';
       const response = await fetch(this.state.webhookUrl, {
         method: 'POST',
         headers: {
