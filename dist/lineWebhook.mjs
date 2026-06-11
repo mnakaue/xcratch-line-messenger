@@ -9,6 +9,7 @@ const STATUS_AUTH_ERROR = '認証エラー';
 const STATUS_SENDING = '送信中';
 const STATUS_SENT = '送信成功';
 const STATUS_ERROR = '送信エラー';
+const DEFAULT_WEBHOOK_URL = 'https://patient-wave-5f0e.toshishyun.workers.dev/api/send';
 
 let extensionURL = 'https://mnakaue.github.io/xcratch-line-messenger/dist/lineWebhook.mjs';
 
@@ -30,7 +31,7 @@ const entry = {
 };
 
 const defaultState = () => ({
-  webhookUrl: '',
+  webhookUrl: DEFAULT_WEBHOOK_URL,
   classPassword: '',
   userCode: '',
   authOk: false,
@@ -63,7 +64,7 @@ class ExtensionBlocks {
           arguments: {
             URL: {
               type: 'string',
-              defaultValue: 'https://patient-wave-5f0e.toshishyun.workers.dev/api/send'
+              defaultValue: DEFAULT_WEBHOOK_URL
             }
           }
         },
@@ -75,11 +76,11 @@ class ExtensionBlocks {
           arguments: {
             PASSWORD: {
               type: 'string',
-              defaultValue: 'class-2026-a'
+              defaultValue: '        '
             },
             USER_CODE: {
               type: 'string',
-              defaultValue: ''
+              defaultValue: '        '
             }
           }
         },
@@ -113,7 +114,7 @@ class ExtensionBlocks {
             },
             USER_CODE: {
               type: 'string',
-              defaultValue: ''
+              defaultValue: '        '
             }
           }
         },
