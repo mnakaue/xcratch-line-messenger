@@ -120,19 +120,19 @@ class ExtensionBlocks {
         {
           opcode: 'isConfigured',
           func: 'isConfigured',
-          blockType: 'boolean',
+          blockType: 'Boolean',
           text: 'LINE送信の設定ができている'
         },
         {
           opcode: 'isAuthenticated',
           func: 'isAuthenticated',
-          blockType: 'boolean',
+          blockType: 'Boolean',
           text: '利用パスワードと個人コードが正しい'
         },
         {
           opcode: 'didLastSendSucceed',
           func: 'didLastSendSucceed',
-          blockType: 'boolean',
+          blockType: 'Boolean',
           text: '最後のLINE送信に成功した'
         },
         {
