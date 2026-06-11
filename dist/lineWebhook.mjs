@@ -3,6 +3,9 @@ const EXTENSION_NAME = 'LINE Webhook';
 const EXTENSION_DESCRIPTION = 'Xcratch から LINE にメッセージを送る';
 const STATUS_READY = '設定OK';
 const STATUS_NOT_READY = '未設定';
+const STATUS_AUTH_CHECKING = '認証確認中';
+const STATUS_AUTH_OK = '認証OK';
+const STATUS_AUTH_ERROR = '認証エラー';
 const STATUS_SENDING = '送信中';
 const STATUS_SENT = '送信成功';
 const STATUS_ERROR = '送信エラー';
@@ -31,7 +34,7 @@ const defaultState = () => ({
   classPassword: '',
   userCode: '',
   authOk: false,
-  authMessage: '未確認',
+  lastSendSucceeded: false,
   lastStatus: STATUS_NOT_READY,
   lastResponse: ''
 });
@@ -76,7 +79,7 @@ class ExtensionBlocks {
             },
             USER_CODE: {
               type: 'string',
-              defaultValue: 's8k2mz4q'
+              defaultValue: '         '
             }
           }
         },
@@ -84,7 +87,7 @@ class ExtensionBlocks {
           opcode: 'checkCredentials',
           func: 'checkCredentials',
           blockType: 'command',
-          text: '利用パスワードと個人コードを確認する'
+          text: '認証の確認'
         },
         {
           opcode: 'sendMessage',
@@ -115,12 +118,6 @@ class ExtensionBlocks {
           }
         },
         {
-          opcode: 'checkReady',
-          func: 'checkReady',
-          blockType: 'command',
-          text: 'LINE送信の準備を確認する'
-        },
-        {
           opcode: 'isConfigured',
           func: 'isConfigured',
           blockType: 'boolean',
@@ -133,12 +130,6 @@ class ExtensionBlocks {
           text: '利用パスワードと個人コードが正しい'
         },
         {
-          opcode: 'getAuthMessage',
-          func: 'getAuthMessage',
-          blockType: 'reporter',
-          text: '利用パスワードと個人コードの確認結果'
-        },
-        {
           opcode: 'didLastSendSucceed',
           func: 'didLastSendSucceed',
           blockType: 'boolean',
@@ -149,12 +140,6 @@ class ExtensionBlocks {
           func: 'getLastStatus',
           blockType: 'reporter',
           text: 'LINE送信の状態'
-        },
-        {
-          opcode: 'getLastResponse',
-          func: 'getLastResponse',
-          blockType: 'reporter',
-          text: 'LINE送信のくわしい応答'
         }
       ],
       menus: {}
@@ -197,18 +182,6 @@ class ExtensionBlocks {
     );
   }
 
-  checkReady() {
-    const missingItems = [];
-    if (!this.state.webhookUrl) missingItems.push('Webhook URL');
-    if (!this.state.classPassword) missingItems.push('利用パスワード');
-    if (!this.state.userCode) missingItems.push('個人コード');
-
-    this.state.lastStatus = this.#isConfigured() ? STATUS_READY : STATUS_NOT_READY;
-    this.state.lastResponse = missingItems.length > 0
-      ? `${missingItems.join(' / ')} が未設定です`
-      : '送信準備ができています';
-  }
-
   isConfigured() {
     return this.#isConfigured();
   }
@@ -217,12 +190,8 @@ class ExtensionBlocks {
     return this.state.authOk;
   }
 
-  getAuthMessage() {
-    return this.state.authMessage;
-  }
-
   didLastSendSucceed() {
-    return this.state.lastStatus === STATUS_SENT;
+    return this.state.lastSendSucceeded;
   }
 
   getLastStatus() {
@@ -256,12 +225,14 @@ class ExtensionBlocks {
   async #postMessage(message, userCode) {
     if (!this.#isConfigured()) {
       this.state.lastStatus = STATUS_ERROR;
+      this.state.lastSendSucceeded = false;
       this.state.lastResponse = 'Webhook URL / 利用パスワード / 個人コード が未設定です';
       return;
     }
 
     if (!userCode) {
       this.state.lastStatus = STATUS_ERROR;
+      this.state.lastSendSucceeded = false;
       this.state.lastResponse = '個人コードが空です';
       return;
     }
@@ -285,9 +256,11 @@ class ExtensionBlocks {
 
       const data = await response.json().catch(() => ({}));
       this.state.lastStatus = response.ok ? STATUS_SENT : STATUS_ERROR;
+      this.state.lastSendSucceeded = response.ok;
       this.state.lastResponse = data.message || response.statusText || 'unknown';
     } catch (error) {
       this.state.lastStatus = STATUS_ERROR;
+      this.state.lastSendSucceeded = false;
       this.state.lastResponse = error instanceof Error ? error.message : String(error);
     }
   }
@@ -295,11 +268,13 @@ class ExtensionBlocks {
   async #verifyCredentials() {
     if (!this.#isConfigured()) {
       this.state.authOk = false;
-      this.state.authMessage = 'Webhook URL / 利用パスワード / 個人コード が未設定です';
+      this.state.lastStatus = STATUS_NOT_READY;
+      this.state.lastResponse = 'Webhook URL / 利用パスワード / 個人コード が未設定です';
       return;
     }
 
     try {
+      this.state.lastStatus = STATUS_AUTH_CHECKING;
       const response = await fetch(this.state.webhookUrl, {
         method: 'POST',
         headers: {
@@ -314,12 +289,14 @@ class ExtensionBlocks {
 
       const data = await response.json().catch(() => ({}));
       this.state.authOk = response.ok;
-      this.state.authMessage = response.ok
+      this.state.lastStatus = response.ok ? STATUS_AUTH_OK : STATUS_AUTH_ERROR;
+      this.state.lastResponse = response.ok
         ? '利用パスワードと個人コードは使えます'
         : data.message || response.statusText || '認証確認に失敗しました';
     } catch (error) {
       this.state.authOk = false;
-      this.state.authMessage = error instanceof Error ? error.message : String(error);
+      this.state.lastStatus = STATUS_AUTH_ERROR;
+      this.state.lastResponse = error instanceof Error ? error.message : String(error);
     }
   }
 
@@ -333,9 +310,9 @@ class ExtensionBlocks {
 
   #refreshStatus() {
     this.state.lastStatus = this.#isConfigured() ? STATUS_READY : STATUS_NOT_READY;
+    this.state.lastSendSucceeded = false;
     if (!this.#isConfigured()) {
       this.state.authOk = false;
-      this.state.authMessage = '未確認';
     }
   }
 
