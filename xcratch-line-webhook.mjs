@@ -79,7 +79,7 @@ class ExtensionBlocks {
             },
             USER_CODE: {
               type: 'string',
-              defaultValue: '         '
+              defaultValue: ''
             }
           }
         },
@@ -109,11 +109,11 @@ class ExtensionBlocks {
           arguments: {
             MESSAGE: {
               type: 'string',
-              defaultValue: '実験成功'
+              defaultValue: 'こんにちは'
             },
             USER_CODE: {
               type: 'string',
-              defaultValue: 's8k2mz4q'
+              defaultValue: ''
             }
           }
         },
